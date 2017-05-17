@@ -1,0 +1,108 @@
+Programming OpenGL for modern hardware.
+
+This is a short guide to programing OpenGL applications, and blender in particular. I have been a member of the OpenGL ARB for more then five years, so if you have questions mail me at eskil at obsession dot se. The easyest way to contact me is to join the IRC channel #verse on the Freenode net.
+
+Hardware vs software performance
+
+Back when OpenGL was created the CPU was usually not the bottle neck, so people could use immediate mode (glBegin/glEnd). But today the graphics cards runs circles around CPUs so the biggest performance problems are usually in the API and in the driver. For each command you give GL the driver has to check various state, check for errors, and make state changes to the hardware. All this is very slow so try to make as few GL calls as possible. This is done by drawing large objects rather then small, and to sort the things you want to draw by their state. Remember: drawing 10 polygons isn't much slower then drawing only one, its the draw call that costs not the polygons. You need to send serious amounts of work to GL for the hardware to become the bottleneck. In DirectX this is even worse and you can roughly only send 50 draw calls per frame. OpenGL isn't that bad (and DX10 is better although not perfect), but still this is something to look out for. So for instance drawing each particle in a particle system as an individual object is very bad.
+
+What to use:
+
+OpenGL is very large and old, and large parts of it should be avoided. So how do you choose what to use? It s good to build your own sub set of functions that you need and then stick to that. Often Gl programs have problems with state leaks, and that can be avoided or at least simpler to deal with by not messing with every state that can be found in GL. To select what parts of GL to use there are a few things to consider: Functionality, performance, and if the features are supported and if there is a acceptable fall back if the feature is not supported. A good place to start reading is the Extension registry at OpenGL.org. ATI and nVidia also have extensive documentation, but they tend to be biased towards their own extensions. Usually ARB extensions are the best. They are supported by everyone, and are usually very well designed. When you are considering using a extension, check the date of the extension. Preferably it should be  less the 3 years old and no older then 5 years. An other good thing to look for is if an other newer extension has come out that addresses the same area/problem. Just because a extension shows up in a extenuation string doesn't mean that its good to use. It may just be there for older applications that where written before newer and better extensions came along. Generally i only support formats that are supported by multiple vendors, but some times i make an exception if the vendor specific extension has very little impact on how the code is architected (like vendor specific texture formats). 
+
+Here is a list of the extensions I use and recommend:
+
+Frame buffer objects
+Stencil Depth interleaved
+Vertex buffer objects
+Float buffer
+Stencil two sided
+Shading language 100
+Cube mapping
+Frame buffer blit
+Half_float (for texture formats)
+S3 Texture compression
+
+Note some of these depend on older extensions, that are also used.
+
+Geometry:
+
+Getting geometry in to the graphics card is a very large bottle neck. The thing to avoid more then anything else is immediate mode. Even when you have   unpredictable data like particle systems or implicit surfaces where the number of vertices change dynamically it is better to build up a buffer and then draw it as a vertex array. The reason is that the user pattern of immediate mode is so unpredictable that it is almost impossible to optimize. If you need functionality where you add one vertex at a time, build a function that fills  a buffer and when it gets to the end of that buffer, draw the buffer using vertex arrays and then start over. Even if the API will be almost identical to immediate mode this will be faster. In short there is never any reason to use immediate mode.
+
+So what should you use? There are 3 different ways to get data in to Vertex arrays, vertex array buffers and Display lists. Vertex arrays are simple to use and supported by all OpenGL implementations. When using them is good to try to use the same array for all vertex data (vertex, normal, color, texcoord...) and to interleave the data. This way the chasing system of the graphics card will be able to more effectively fetch the data. Try making the data as small as possible, by using 16-bit data and not have any data not used, to get as good performance as possible.
+
+Vertex array objects, lets you map a part of the graphics cards memory and then use that memory for your vertex arrays. This is supported by almost all hardware and is easy to implement if you already have vertex array support. One thing to remember here is that reading and writing to this memory may be slower then reading and writing to ram. so avoid:
+
+for(i = 0; i <  1000; i++)
+	membuf[x] += weight[i];
+
+and rather:
+
+for(i = 0; i <  1000; i++)
+	f += weight[i];
+membuf[x] = f;
+
+Compute first, and then when you are done, but it in to the memory buffer. Vertex array buffers can be expensive to switch between so it may be a good idea to use fewer larger buffers and then map many objects geometry in to the same buffer, rather the having one buffer for each tiny object.
+
+Display lists are the fastest way of getting geometry to the Graphics card but also the least flexible. YOu use them to record your actions, and then you can store that recording and execute it again and again. The driver can then optimize this significantly because it knows that the user will do exactly the same thing over and over again. This is very use full for non animated background set peaces that needs to be drawn over and over. A thing to note is that each time the display list is drawn all shaders are computed, so you can actually have animated display lists. When you record a display list, record as much state as possible and what ever you do do not record a stream of immediate mode calls with out also including the begin and end calls. (Some people do this thinking they are clever, because they can chose the primitive type of the draw even after the display list is compiled, or because they thing they can con-cut, many display-lists in to just one geometry, They are WRONG, all they get is terrible performance)
+When you compile a display list don't draw the display list while you are recording, it is usually faster to just record the list and then display it.
+
+When using arrays it is always good to have a reference array and reference the same vertex multiple times. Hardware usually has vertex cashing so a vertex used twice may only need to be computed once. The vertex cash is limited in size so it makes sense to draw neighboring polygons after each other. So drawing the polygons in a object in a random order is not recommended.
+
+Shaders:
+
+All modern hardware have shader hardware, and even if you don't use shaders and use the old fixed function functionality, the driver will compile a shader that programs the hardware for you. So there is no fixed function  hardware any more. Therefor it makes sense to use the functionality. The best way to program GL is to use GLSL - OpenGLs Shading language. GLSL is the only language where the compiler sits in the driver, so the application can generate shaders on the fly, send then to the driver and display them. 
+
+When writing shaders, some people write "uber-shaders", large shaders that encompass all different things the application wants to do. This however will make the shaders run slower, so its better to have many different more specialized shaders. For instance it can be good to have one shader for lighting involving only one light source, and then the same shader again with two light sources in a different shader rather then making one shader with a light count parameter. If a shader has a if branch it may in a worst case scenario end up computing both branches, so be aware of dead code. Remember that each instruction gets multiplied with the number of pixels you are drawing so a small change may make a big difference. So it generally makes sense for larger applications like blender to have a system that can generate the needed shaders dynamically.
+
+In general graphics hardware is infinitely faster then CPUs, so it makes sense to use them for as much as possible. You should note that Programmable hardware can be used for other things then rendering like, tessellation, animation, compositing and fluid simulation.
+
+Render surface:
+
+Avoid rendering to front buffers, P-buffers and Accumulation buffers. If you need to render to a texture/image use Frame buffer objects. If you need to copy from one image/texture to an other use the frame buffer blit extension. ATI hardware does not support FBOs (frame buffer objects) with stencil buffers. If you need to render to a texture and use stencil buffer, render to the famebuffer and blit in to the texture. If you are using FBOs on nvidia hardware or future ATI hardware/drivers and need stencil buffers, always use interleaved stencil/depth buffer as this is the only supported  format.
+
+Texture formats:
+
+Try to avoid exotic texture formats. Use GL_RGB and GL_RGBA. For massive texture amounts use S3 texture compression. For all HDRI textures use GL_FLOAT_RGB and GL_FLOAT_RGBA. On nvidia hardware GL_HALF_RGB and GL_HALF_RGBA is also available (16 bit floating point), they are notably faster, and uses less memory, how ever they are slow to convert from and to. Cube, 1D, 2D and shadow mapping is always available, but 3D texturing (although often available) is often slow. Avoid hyperbolic texturing. 
+
+Other general tips:
+
+-Try to wrap Gl calls so that they can be switched out when new functionality gets in to GL. Try to have as few OpenGL entry points in the code as possible.
+
+-Don't use feedback mode, its all in software so, its better to have your own implementation.
+
+-Make as few calls as possible, it is far better to draw one large object then to draw many small.
+
+-Change of GL state takes time, especially, switching programs, Buffers, vertex arrays and FBOs. Avoid is possible and state sort if possible.
+
+-Try to draw the non transparent parts of the scene, front to back. Modern hardware checks Z-buffering before it computes the shader so if you draw the front first the shaders on the surfaces behind it does not need to compute.
+
+-In very shader heavy scenes it may be a good idea to draw a Z-pass first, so that no shader is computed when not needed.
+
+-Back face culling is essentially free so use it!
+
+-Smooth lines can usually not be drawn with shaders.
+
+-The Graphics card bus is usually a big bottle neck, so avoid sending textures or geometry between the main memory and the GL driver. This can be a huge cost!
+
+-Always make your shaders use as little memory as possible, even if it runs fine on your machine, it may run out of memory on an other system and switch to software mode. sometimes shader compiles use resources like texture samplers with out telling the user so try not to allocate more resources then you need.
+
+-Try if possible to move computation form the fragment shader to the vertex shader.
+
+-"noise" is a function in GLSL that doesn't work on current hardware. use a texture look-up instead.
+
+-If you are unsure contact developer relations of nVidia, ATI, intel and Apple (Apple writes their own drivers for both nVidia and ATI hardware, so they are not the same as on PC)
+
+-Always profile.
+
+-Test on multiple system with different operating system and hardware vendors.
+
+-3D textures can be very slow, (especially on nVidia hardware).
+
+-Loops with a fixed loop count can be considerable faster the loops with dynamic loop count in GLSL.
+
+-Use debuggers like GLDebug (they give out free licenses to non commercial developers)
+
+-Ask your hardware vendors profile the application for you, they can give you great tips on how to improve it.
+
+

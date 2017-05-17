@@ -1,0 +1,18 @@
+Le principe est d'exploiter les noeuds du niveau.
+
+Il faut tout d'abords lier les noeuds aux murs qui empêchent les connexions, et les lier également aux robots 
+(chaque noeud pouvant avoir un robot, un robot pouvant être sur plusieurs noeuds simultanément, tout comme un mur).
+
+On définit une zone d'influence pour un noeud, qui est un carré autour du noeud d'une certaine taille (LEVEL_METER ?).
+
+Sachant cela, on considère une ligne (x1, z1, x2, z2), et l'ensemble des noeuds N qui contiennent (x1, z1).
+P = (x1, z1), Q = (x2, z2)
+
+Pour chaque noeud Ni on donne Di le vecteur (Nix - x1, Niz - z1)
+
+Pour chaque voisin j de Ni on donne DNij le vecteur (Nix - Njx, Niz - Njz)
+
+On a trois vecteurs (DNij - Ni), (P - >Ni), (Q - P)
+
+Comment déterminer qu'un noeud lié peut être potentiellement un noeud contenant un objet en intersection avec la ligne ?
+

@@ -1,0 +1,168 @@
+* Le projet
+
+    Le projet est un jeu de tir « warbot3d ». Trois robots s'affrontent : un bleu, un orange, et un vert. 
+    Le joueur contrôle le robot bleu.
+
+    Un robot peut tirer avec son fusil laser.
+
+    Le but du jeu est de tuer le plus de fois possibles ses adversaires en se faisant tuer le moins possible.
+
+    Un robot peut encaisser un certain nombre de coups de laser avant de succomber.
+
+    Lorsqu'un robot meurt, un petit instant s'écoule et il réapparait automatiquement à une position aléatoire dans le
+    niveau.
+    
+    Le robot tueur gagne un point.
+
+    ** Installation
+    
+        Dépendances :
+            libfreeglut3-dev libglew-dev libopenal-dev libsndfile-dev
+        
+        Compilation :
+            $ ./build.sh
+        
+        Exécution :
+            $ ./warbot3d [option [...]]
+            
+            On peut utiliser des options pour paramètrer le programme. Voici la liste :
+            -shader=0|1             : Utiliser ou non les shaders.
+            -shader_level=0|1|2     : Qualité des programmes de shaders (0 = faible, 1 = moyen, 2 = élevée).
+            -display_nodes=0|1      : Activer/Désactiver l'affichage des noeuds (0 = désactiver, 1 = activer).
+            -seed=x                 : Utiliser la graine de génération aléatoire spécifiée.
+            
+
+    ** Bugs
+    
+        Chez ATI, le filtre d'anti-aliasing ne doit pas être 'edge-detect' (sous linux uniquement ?).
+
+
+    ** Contrôles
+    
+        ECHAP       : Quitter le programme.
+        F           : Changer le mode vidéo (plein écran <-> fenêtre).
+        TAB         : Changer le robot contrôlé, ou passer en mode caméra libre.
+
+        HAUT        : Avancer.
+        BAS         : Reculer.
+        GAUCHE      : Pas sur le coté gauche.
+        DROITE      : Pas sur le coté droit.
+        PAGE UP     : Monter la caméra (Seulement en mode caméra libre).
+        PAGE DOWN   : Descendre la caméra (Seulement en mode caméra libre).
+        
+        On s'oriente grâce à la souris, et on tire en cliquant sur l'un de ses boutons. Maintenir appuyé pour répéter les 
+        tirs.
+
+
+* Explications
+
+    J'ai programmé ce projet en C, et j'ai utilisé les bibliothèques suivantes :
+    - gl et GLU pour la gestion du rendu 3d ;
+    - GLUT pour les entrées/sorties et la communication avec le système (fenêtre, clavier, timer) ;
+    - GLEW pour la gestion des extensions d'openGL (VBO & shaders) ;
+    - sndfile pour la lecture de fichiers audio sur le disque ;
+    - openAL pour la gestion du son (en 3d).
+    
+    Le jeu est supporté par 4 grands groupes de modules, qui sont les sous dossiers du répertoire src/ :
+    - math/ : Vecteur & matrice dans l'espace, lignes et triangles 2D.
+    - 3d/ : Lumière, matériel, modèle 3d, shaders...
+    - engine/ : Communication avec le système, les entrées/sorties non standards (basé sur GLUT).
+    
+    Les fichiers du jeu sont l'ensemble des fichiers à la racine de src/ et du répertoire src/scene/
+    
+    Une documentation partielle est disponible dans les fichiers .h
+    
+    
+* Commentaires
+
+    Parmis les choses potentiellement intéressantes que contient ce projet, on peut noter :
+    - Le chargeur de bitmap (engine/bitmap.h) ;
+    - Le chargeur d'obj (3d/mesh_mesh_io_obj.c) ;
+    - La gestion de mesh en VBO (3d/mesh/vbo_mesh.h) ;
+    - La gestion d'animation de mesh (3d/rig.h, 3d/mesh/vbo_rig.h) ;
+    - La gestion des shaders GLSL (3d/shader.h) ;
+    - L'afficheur de font bitmap (avec restriction, engine/font.h) ;
+    - Le niveau (scene/level.h)
+        + Triangulisation de secteur (scene/level.c:309-439) ;
+        + Génération des noeuds (scene/level.c:1068-1221) ;
+        + Recherche de chemins (scene/level.c:464-624) ;
+    - Le robot (robot.h) ;    
+    
+    
+* Sujet de base
+
+    Nous désirons créer pour ce projet individuel, qui se traduira par une note de contrôle continu, un univers fermé où 
+    évoluent des objets et lumières se déplaçant de manière autonome, ainsi qu'un « sujet » et une caméra dont l'utilisateur
+    peut prendre le contrôle.
+
+    Le thème est libre.
+
+    Le « sujet » est un polyèdre irrégulier ayant au moins 20 faces avec normales aux sommets.
+    Le sujet est articulé et ses « membres » peuvent être contrôlés indépendamment.
+    Une touche permet de prendre le contrôle de la caméra ou du sujet.
+
+    Lorsque le sujet ou la caméra sont sous contrôle, des touches permettent de le déplacer et/ou de changer son 
+    orientation.
+
+    Lors des déplacements de la caméra ou du sujet, ils ne peuvent pas sortir de l'univers fermé (une bulle entourant le 
+    sujet peut prévenir du contact avec les bords de l'univers).
+
+    Au moins un objet ou le sujet doit être entièrement texturé et au moins un objet ou le sujet doit prendre en compte le 
+    matériau.
+
+    L'univers doit baigner dans une lumière ambiante et posséder au moins une lumière directionnelle et au moins une lumière
+    positionnelle (qui peut être allumée ou éteinte).
+
+    Sur un écran (ou plusieurs écrans) se déroule une animation en boucle à base de textures.
+
+    Le sujet a une réplique autonome qui se meut dans l'univers en montrant aléatoirement ses possibilités de mouvements et 
+    celles de ses membres.
+
+    Le but de ce projet est de montrer votre compréhension et votre aptitude technique en OpenGL.
+
+    Le plagiat sera évidemment sanctionné donc inutile d'aller chercher ailleurs des choses que vous ne seriez pas faire.
+    
+    Faites vous plaisir ! 
+
+    Le projet doit impérativement tourner en c/c++ sous Linux Ubuntu avec un makefile et un fichier texte d'explications. 
+    Vous n'êtes pas obligé de gérer les collisions des objets entre eux ni avec le sujet mais si vous le faites, expliciter 
+    le dans le fichier d'explications. 
+    
+    
+* Réponse au sujet
+
+    Le « sujet » est un robot se déplaçant dans un univers fermé (le niveau, composé de secteurs eux mêmes composés de
+    murs, sol et plafond).
+    
+    Un secteur est un polygône pas forcément simple, triangulisé pour l'affichage du sol et du plafond.
+    La hauteur du sol est constante pour tous les secteurs, mais pas celle de plafond.
+    Un secteur dispose d'une lumière ambiante propre.
+    
+    Lorsqu'un secteur n'a pas de texture de plafond, on voit le ciel (skybox) et la lumière directionelle y est active.
+    
+    Il y a 3 robots de couleurs différentes, gérés soit par le joueur soit par IA.
+    Le robot se repère dans le niveau grâce à des noeuds générés automatiquements. Il recherche son chemin grâce à un 
+    algorithme de recherche A*.
+    Lorsqu'il existe une ligne de vue entre deux robots, ils peuvent choisir de se tirer dessus.
+    
+    La caméra ou un des robots est contrôlable. Le robot ne peut qu'avancer sur un plan et tourner selon l'axe de la
+    hauteur.
+    La caméra peut se déplacer dans les 3 directions et pivoter selon deux axes.
+    
+    Les déplacements sont contraints dans le niveau en comparant à chaque déplacement la ligne formée par la position
+    de l'objet et la position plus la vitesse de l'objet avec chaque mur du niveau. Si il existe une intersection entre 
+    cette ligne et l'un des murs, alors on arrête le déplacement.
+    
+    Lorsqu'un robot tir, un laser se créé entre le fusil du robot et le premier obstacle rencontré (robot ou mur).
+    Une lumière positionelle de la couleur du robot clignote lors du tir.
+      
+    Au point d'impact du laser, de la fumée se créé : c'est la texture animée.
+
+
+* Crédits
+
+Modèle du robot                         : Cuzco (http://opengameart.org/content/shamgar-the-killer-robot)
+Textures                                : Spiney (http://opengameart.org/content/metalstone-textures)
+Sons de laser                           : soundslikewillem (http://www.freesound.org/people/soundslikewillem/sounds/190707/)
+Son d'apparition et de mort du robot    : Jalastram (http://opengameart.org/users/jalastram)
+
